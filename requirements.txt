@@ -1,0 +1,7 @@
+smallestai
+openai
+cyberwave
+pyaudio
+websockets
+aiohttp
+aiofiles
