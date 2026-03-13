@@ -11,7 +11,7 @@ Unitree Go2 SDK: https://github.com/unitreerobotics/unitree_sdk2_python
 
 from cyberwave import Cyberwave
 from config import CYBERWAVE_API_KEY, ROBOT_ASSET_ID, ENVIRONMENT_ID
-
+import time
 
 # ============================================================
 # INITIALIZE CYBERWAVE
@@ -93,22 +93,61 @@ def _real_execute(command: str, params: dict) -> str:
 
     if command == "move_forward":
         distance = params.get("distance", 1.0)
-        robot.edit_position(x=distance)
+        #robot.edit_position(x=distance)
+        robot.client.mqtt.publish(
+            f"cyberwave/twin/{robot.uuid}/command",
+            {
+                "source_type": "tele",
+                "command": "move_forward",
+                "data": {"linear_x": distance, "angular_z": 0.0},
+                "timestamp": time.time(),
+            },
+        )
         return f"Moved forward {distance} units"
 
     elif command == "move_backward":
         distance = params.get("distance", 1.0)
-        robot.edit_position(x=-distance)
+        #robot.edit_position(x=-distance)
+        robot.client.mqtt.publish(
+            f"cyberwave/twin/{robot.uuid}/command",
+            {
+                "source_type": "tele",
+                "command": "move_backward",
+                "data": {"linear_x": distance, "angular_z": 0.0},
+                "timestamp": time.time(),
+            },
+        )
+
         return f"Moved backward {distance} units"
 
     elif command == "turn_left":
         angle = params.get("angle", 90)
-        robot.edit_rotation(yaw=-angle)
+        #robot.edit_rotation(yaw=-angle)
+        robot.client.mqtt.publish(
+            f"cyberwave/twin/{robot.uuid}/command",
+            {
+                "source_type": "tele",
+                "command": "turn_left",
+                "data": {"linear_x": distance, "angular_z": 0.0},
+                "timestamp": time.time(),
+            },
+        )
+        
         return f"Turned left {angle} degrees"
 
     elif command == "turn_right":
         angle = params.get("angle", 90)
-        robot.edit_rotation(yaw=angle)
+        #robot.edit_rotation(yaw=angle)
+        robot.client.mqtt.publish(
+            f"cyberwave/twin/{robot.uuid}/command",
+            {
+                "source_type": "tele",
+                "command": "turn_right",
+                "data": {"linear_x": distance, "angular_z": 0.0},
+                "timestamp": time.time(),
+            },
+        )
+
         return f"Turned right {angle} degrees"
 
     elif command == "sit":
