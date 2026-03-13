@@ -5,7 +5,7 @@ Handles: multilingual text → English translation + robot command extraction
 
 import json
 from openai import OpenAI
-from config import OPENAI_API_KEY, LLM_MODEL, LLM_TEMPERATURE, VALID_COMMANDS
+from config import OLLAMA_BASE_URL, LLM_MODEL, LLM_TEMPERATURE, VALID_COMMANDS
 
 
 SYSTEM_PROMPT = """You are a multilingual robot command interpreter for a Unitree Go2 robot dog.
@@ -42,7 +42,7 @@ Examples:
 """
 
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(base_url=OLLAMA_BASE_URL, api_key="ollama")
 
 
 def parse_command(transcribed_text: str) -> dict:
@@ -73,7 +73,6 @@ def parse_command(transcribed_text: str) -> dict:
                 "content": transcribed_text,
             },
         ],
-        response_format={"type": "json_object"},
         temperature=LLM_TEMPERATURE,
     )
 

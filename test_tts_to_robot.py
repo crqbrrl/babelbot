@@ -9,7 +9,7 @@ is parsed: does the robot move AND does it speak back correctly?
 4 test modes:
     1. MOCK        → Run commands with mock robot + mock TTS (no API keys needed)
     2. TTS ONLY    → Test voice output without robot (needs SMALLEST_API_KEY)
-    3. FULL CHAIN  → Type text → LLM → Robot executes → TTS speaks (needs OpenAI + Smallest keys)
+    3. FULL CHAIN  → Type text → LLM → Robot executes → TTS speaks (needs Ollama + Smallest keys)
     4. DEMO RUN    → Simulate the hackathon demo with all 3 languages
 
 Usage:
@@ -168,7 +168,7 @@ def test_full_chain():
     LLM parses → Robot executes → TTS speaks the confirmation.
     This tests the entire output pipeline end-to-end.
 
-    Needs: OPENAI_API_KEY + SMALLEST_API_KEY
+    Needs: Ollama running + SMALLEST_API_KEY
     """
     print("=" * 55)
     print("  TEST: Full Output Chain (LLM → Robot → TTS)")
@@ -252,7 +252,7 @@ def test_demo_run():
     Simulate the exact hackathon demo:
     3 speakers, 3 languages, robot acts + speaks after each command.
 
-    Needs: OPENAI_API_KEY + SMALLEST_API_KEY
+    Needs: Ollama running + SMALLEST_API_KEY
     """
     print("=" * 55)
     print("  DEMO RUN: Hackathon Presentation Simulation")

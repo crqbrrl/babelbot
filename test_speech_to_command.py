@@ -83,27 +83,34 @@ async def test_live_mic():
 # ============================================================
 async def test_audio_file(filepath: str):
     """
-    Load a WAV file, send it to STT, then parse the command.
+    Load a WAV file, transcribe with local Whisper, then parse the command.
     Useful for repeatable tests with pre-recorded audio.
     """
+    import os
+    os.environ.setdefault("HF_HOME", "/tmp/hf_cache")
+    from faster_whisper import WhisperModel
+
     print(f"[FILE] Loading: {filepath}")
 
-    try:
-        with open(filepath, "rb") as f:
-            audio_data = f.read()
-    except FileNotFoundError:
+    if not os.path.exists(filepath):
         print(f"[ERROR] File not found: {filepath}")
         return
 
-    print(f"[FILE] Loaded {len(audio_data)} bytes")
+    file_size = os.path.getsize(filepath)
+    print(f"[FILE] Loaded {file_size} bytes")
 
-    # Step 1: Transcribe
+    # Step 1: Transcribe with local Whisper
+    print("[STT] Loading Whisper model...")
     t0 = time.time()
-    transcribed = await transcribe_rest(audio_data)
+    model = WhisperModel("base", device="cpu", compute_type="int8")
+    segments, info = model.transcribe(filepath, language=None)
+    transcribed = " ".join(seg.text.strip() for seg in segments)
     stt_time = time.time() - t0
 
+    print(f"[STT] Detected language: {info.language} (prob: {info.language_probability:.2f})")
+
     if not transcribed.strip():
-        print("[ERROR] STT returned empty text. Check the audio file or API key.")
+        print("[ERROR] STT returned empty text. Check the audio file.")
         return
 
     print(f"[STT] Got: \"{transcribed}\" ({stt_time:.2f}s)")
@@ -124,7 +131,7 @@ async def test_mock_text():
     """
     Type commands in any language. Tests only the LLM parsing.
     No mic or API key for Smallest.ai needed.
-    Only needs OPENAI_API_KEY.
+    Only needs Ollama running locally.
     """
     print("=" * 50)
     print("  TEST: Mock Text → LLM (no mic needed)")

@@ -24,7 +24,7 @@ echo ""
 echo "Set these environment variables before running:"
 echo ""
 echo '  export SMALLEST_API_KEY="your-key-from-console.smallest.ai"'
-echo '  export OPENAI_API_KEY="your-openai-key"'
+echo '  # Ollama runs locally — no API key needed (ensure ollama is running)'
 echo '  export CYBERWAVE_API_KEY="your-cyberwave-key"'
 echo ""
 echo "=== Setup Complete ==="

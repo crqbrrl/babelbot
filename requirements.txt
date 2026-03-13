@@ -1,5 +1,5 @@
 smallestai
-openai
+openai  # used as Ollama-compatible client
 cyberwave
 pyaudio
 websockets

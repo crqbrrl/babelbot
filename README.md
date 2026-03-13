@@ -11,7 +11,7 @@ Built at the [Robotic Agents Hackathon](https://luma.com/robotic-agents-hackatho
 ```
 [Voice FR/HI/DE/EN]
     → Smallest.ai Pulse STT (multilingual transcription)
-    → GPT-4o-mini (translate + extract robot command as JSON)
+    → Ollama gpt-oss:20b (translate + extract robot command as JSON)
     → Cyberwave SDK (Unitree Go2 robot dog moves)
     → Smallest.ai Waves TTS (English voice confirmation)
 ```
@@ -40,7 +40,7 @@ chmod +x setup.sh && ./setup.sh
 
 # 2. Set API keys
 export SMALLEST_API_KEY="your-key"
-export OPENAI_API_KEY="your-key"
+# Ollama runs locally — ensure `ollama serve` is running with model gpt-oss:20b
 export CYBERWAVE_API_KEY="your-key"
 
 # 3. Run
@@ -51,7 +51,7 @@ python main.py --test   # Test mode (type commands)
 ## Testing
 
 ```bash
-# Test LLM parsing only (no mic needed, only OpenAI key)
+# Test LLM parsing only (no mic needed, only Ollama)
 python test_speech_to_command.py --mock
 
 # Batch test all languages (23 preset commands)
@@ -80,7 +80,7 @@ python test_robot_commands.py --live
 
 - [Cyberwave Python SDK](https://github.com/cyberwave-os/cyberwave-python) — Robot control
 - [Smallest.ai Python SDK](https://github.com/smallest-inc/smallest-python-sdk) — STT + TTS
-- [OpenAI API](https://platform.openai.com/) — Command parsing (GPT-4o-mini)
+- [Ollama](https://ollama.com/) — Command parsing (gpt-oss:20b, local)
 - [Unitree Go2](https://www.unitree.com/go2/) — Robot dog hardware
 
 ## Hackathon Tracks

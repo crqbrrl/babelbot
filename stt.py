@@ -8,7 +8,7 @@ import json
 import asyncio
 import wave
 import io
-import pyaudio
+import sounddevice as sd
 import aiohttp
 import websockets
 from config import (
@@ -24,7 +24,7 @@ from config import (
 
 def record_from_mic(duration: int = RECORD_SECONDS) -> bytes:
     """
-    Record audio from the microphone.
+    Record audio from the microphone using sounddevice (PipeWire-compatible).
 
     Args:
         duration: How many seconds to record (default from config)
@@ -32,28 +32,19 @@ def record_from_mic(duration: int = RECORD_SECONDS) -> bytes:
     Returns:
         Raw audio bytes (PCM 16-bit)
     """
-    audio = pyaudio.PyAudio()
-
-    stream = audio.open(
-        format=pyaudio.paInt16,
-        channels=CHANNELS,
-        rate=SAMPLE_RATE,
-        input=True,
-        frames_per_buffer=CHUNK_SIZE,
-    )
+    import numpy as np
 
     print(f"[MIC] Listening for {duration}s... Speak now!")
 
-    frames = []
-    for _ in range(0, int(SAMPLE_RATE / CHUNK_SIZE * duration)):
-        data = stream.read(CHUNK_SIZE, exception_on_overflow=False)
-        frames.append(data)
+    recording = sd.rec(
+        int(SAMPLE_RATE * duration),
+        samplerate=SAMPLE_RATE,
+        channels=CHANNELS,
+        dtype="int16",
+    )
+    sd.wait()
 
-    stream.stop_stream()
-    stream.close()
-    audio.terminate()
-
-    raw_audio = b"".join(frames)
+    raw_audio = recording.tobytes()
     print(f"[MIC] Recorded {len(raw_audio)} bytes")
     return raw_audio
 
@@ -85,43 +76,47 @@ async def transcribe_streaming(raw_audio: bytes) -> str:
     }
 
     try:
-        async with websockets.connect(STT_WS_URL, extra_headers=headers) as ws:
-            # Send configuration
-            config = {
-                "type": "config",
-                "sample_rate": SAMPLE_RATE,
-                "language": "multi",  # multilingual mode
-            }
-            await ws.send(json.dumps(config))
-
-            # Stream audio in chunks
-            chunk_size = 4096
-            for i in range(0, len(raw_audio), chunk_size):
-                chunk = raw_audio[i:i + chunk_size]
-                await ws.send(chunk)
-                await asyncio.sleep(0.01)  # small delay to avoid overwhelming
-
-            # Signal end of audio
-            await ws.send(json.dumps({"type": "end"}))
-
-            # Collect transcript
-            full_text = ""
-            async for message in ws:
-                data = json.loads(message)
-                if data.get("type") == "transcript":
-                    full_text = data.get("text", "")
-                    print(f"[STT partial] {full_text}")
-                elif data.get("type") == "final":
-                    if data.get("text"):
-                        full_text = data["text"]
-                    break
-
-            print(f"[STT] Final: {full_text}")
-            return full_text
-
+        return await asyncio.wait_for(_transcribe_ws(raw_audio, headers), timeout=10)
     except Exception as e:
         print(f"[STT] WebSocket error: {e}, falling back to REST API")
         return await transcribe_rest(raw_audio)
+
+
+async def _transcribe_ws(raw_audio: bytes, headers: dict) -> str:
+    """Internal WebSocket transcription with no timeout (caller handles it)."""
+    async with websockets.connect(STT_WS_URL, additional_headers=headers) as ws:
+        # Send configuration
+        config = {
+            "type": "config",
+            "sample_rate": SAMPLE_RATE,
+            "language": "multi",  # multilingual mode
+        }
+        await ws.send(json.dumps(config))
+
+        # Stream audio in chunks
+        chunk_size = 4096
+        for i in range(0, len(raw_audio), chunk_size):
+            chunk = raw_audio[i:i + chunk_size]
+            await ws.send(chunk)
+            await asyncio.sleep(0.01)  # small delay to avoid overwhelming
+
+        # Signal end of audio
+        await ws.send(json.dumps({"type": "end"}))
+
+        # Collect transcript
+        full_text = ""
+        async for message in ws:
+            data = json.loads(message)
+            if data.get("type") == "transcript":
+                full_text = data.get("text", "")
+                print(f"[STT partial] {full_text}")
+            elif data.get("type") == "final":
+                if data.get("text"):
+                    full_text = data["text"]
+                break
+
+        print(f"[STT] Final: {full_text}")
+        return full_text
 
 
 async def transcribe_rest(raw_audio: bytes) -> str:
@@ -140,7 +135,8 @@ async def transcribe_rest(raw_audio: bytes) -> str:
         "Authorization": f"Bearer {SMALLEST_API_KEY}",
     }
 
-    async with aiohttp.ClientSession() as session:
+    timeout = aiohttp.ClientTimeout(total=10)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         data = aiohttp.FormData()
         data.add_field(
             "file",

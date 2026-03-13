@@ -34,13 +34,14 @@ def speak(text: str, play: bool = True) -> str:
     filepath = os.path.join(AUDIO_DIR, "response.wav")
 
     try:
-        tts_client.synthesize(
+        audio_bytes = tts_client.synthesize(
             text=text,
-            save_as=filepath,
             voice_id=TTS_VOICE_ID,
             model=TTS_MODEL,
             speed=TTS_SPEED,
         )
+        with open(filepath, "wb") as f:
+            f.write(audio_bytes)
         print(f"[TTS] Generated: '{text}'")
 
         if play:
